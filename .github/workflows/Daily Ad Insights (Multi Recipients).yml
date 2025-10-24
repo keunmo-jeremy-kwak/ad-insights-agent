@@ -1,0 +1,61 @@
+name: Daily Ad Insights (Multi Recipients)
+
+on:
+  schedule:
+    # 매일 오전 9시 (한국 시간 = UTC 0시)
+    - cron: '0 0 * * *'
+  workflow_dispatch:  # 수동 실행 가능
+
+jobs:
+  run-agent:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 코드 체크아웃
+      uses: actions/checkout@v3
+    
+    - name: Python 설정
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: 패키지 설치
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    
+    - name: 멀티 수신자 인사이트 에이전트 실행
+      env:
+        # API Key (필수)
+        ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        
+        # 슬랙 Webhooks (방법 1: 쉼표로 구분)
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        
+        # 슬랙 Webhooks (방법 2: 개별 설정)
+        SLACK_WEBHOOK_1: ${{ secrets.SLACK_WEBHOOK_1 }}
+        SLACK_WEBHOOK_2: ${{ secrets.SLACK_WEBHOOK_2 }}
+        SLACK_WEBHOOK_3: ${{ secrets.SLACK_WEBHOOK_3 }}
+        
+        # 이메일 기본 설정
+        SMTP_SERVER: smtp.gmail.com
+        SMTP_PORT: 587
+        FROM_EMAIL: ${{ secrets.FROM_EMAIL }}
+        EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
+        
+        # 받는 이메일 (방법 1: 쉼표로 구분)
+        TO_EMAIL: ${{ secrets.TO_EMAIL }}
+        
+        # 받는 이메일 (방법 2: 개별 설정)
+        TO_EMAIL_1: ${{ secrets.TO_EMAIL_1 }}
+        TO_EMAIL_2: ${{ secrets.TO_EMAIL_2 }}
+        TO_EMAIL_3: ${{ secrets.TO_EMAIL_3 }}
+        
+      run: |
+        python multi_recipient_agent.py
+    
+    - name: 실행 결과 요약
+      if: always()
+      run: |
+        echo "🎉 워크플로우 실행 완료!"
+        echo "📊 수신자들에게 리포트가 전송되었습니다."
